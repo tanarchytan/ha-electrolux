@@ -713,6 +713,22 @@ class TestSensorMissingCoverage:
         basic_sensor_entity.reported_state = {"measuredLoadWeight": 3200}
         assert basic_sensor_entity.native_value == 3200
 
+    def test_drying_nominal_load_weight_filters_65535_sentinel(self, basic_sensor_entity):
+        """dryingNominalLoadWeight 65535 = not available, return None.
+
+        The capability declares max 20000 and a NOT_AVAILABLE value, so 65535 is
+        out of range rather than a reading. Observed on a TD-916900511 while idle.
+        """
+        basic_sensor_entity.entity_attr = "dryingNominalLoadWeight"
+        basic_sensor_entity.reported_state = {"dryingNominalLoadWeight": 65535}
+        assert basic_sensor_entity.native_value is None
+
+    def test_drying_nominal_load_weight_passes_valid_value(self, basic_sensor_entity):
+        """dryingNominalLoadWeight valid reading passes through."""
+        basic_sensor_entity.entity_attr = "dryingNominalLoadWeight"
+        basic_sensor_entity.reported_state = {"dryingNominalLoadWeight": 4500}
+        assert basic_sensor_entity.native_value == 4500
+
     # ── watertankempty boolean type ───────────────────────────────────────────
 
     def test_watertankempty_boolean_capability_type_not_full(self, basic_sensor_entity):

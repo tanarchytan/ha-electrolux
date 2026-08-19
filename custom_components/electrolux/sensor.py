@@ -117,7 +117,7 @@ class ElectroluxSensor(ElectroluxEntity, SensorEntity):
 
         # Special handling for load weight sensors: filter out error/sentinel codes.
         # 65535 (0xFFFF) = "not measured", 65408-65532 = error/status codes.
-        if self.entity_attr in ("fcOptisenseLoadWeight", "measuredLoadWeight"):
+        if self.entity_attr in ("fcOptisenseLoadWeight", "measuredLoadWeight", "dryingNominalLoadWeight"):
             if value is not None and isinstance(value, (int, float)):
                 if value >= 65408:
                     _LOGGER.debug(
