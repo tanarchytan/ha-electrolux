@@ -713,6 +713,46 @@ class TestExecuteStatesFromCapabilities:
         assert "IDLE" not in derived["START"]
         assert "IDLE" in DRYER_EXECUTE_STATES["START"]
 
+    def test_entity_source_looks_up_nested_appliance_state(self):
+        """Structured ovens store triggers under 'upperOven/applianceState'."""
+        caps = {
+            "upperOven/applianceState": {
+                "triggers": [
+                    {
+                        "action": {"executeCommand": {"values": {"START": {}}}},
+                        "condition": {
+                            "operand_1": "value",
+                            "operand_2": "OFF",
+                            "operator": "eq",
+                        },
+                    }
+                ]
+            }
+        }
+        assert execute_states_from_capabilities(caps, entity_source="upperOven") == {
+            "START": ["OFF"]
+        }
+
+    def test_entity_source_falls_back_to_root_appliance_state(self):
+        """When the nested key is absent, the root applianceState is used."""
+        caps = {
+            "applianceState": {
+                "triggers": [
+                    {
+                        "action": {"executeCommand": {"values": {"START": {}}}},
+                        "condition": {
+                            "operand_1": "value",
+                            "operand_2": "READY_TO_START",
+                            "operator": "eq",
+                        },
+                    }
+                ]
+            }
+        }
+        assert execute_states_from_capabilities(caps, entity_source="upperOven") == {
+            "START": ["READY_TO_START"]
+        }
+
     @pytest.mark.parametrize(
         "capabilities",
         [
@@ -869,7 +909,7 @@ class TestButtonAvailabilityPrefersAppliance:
         return entity
 
     def test_start_hidden_in_idle_when_appliance_says_so(self, mock_coordinator):
-        """The bug: the catalog allows START in IDLE, the appliance only accepts ON."""
+        """The appliance only accepts ON in IDLE, not START.  Appliance triggers win over the catalog."""
         caps = DRYER_TRIGGERS
         entity = self._make_button(mock_coordinator, "IDLE", "START", caps)
         assert entity.available is False
